@@ -18,8 +18,10 @@ function FIBSEMData = readfibsem(FullPathFile)
 %   added decimating factor
 % 7/1/2014
 %   added file version 7 for 8-bit data support
-% 7/4/2014
+% 7/4/2015
 %   added file version 8 support
+% 7/25/2017
+%   added support for files with partial image
 %
 
 %% Load raw data file
@@ -206,8 +208,12 @@ fseek(fid,1000,'bof'); FIBSEMData.FileLength = fread(fid,1,'int64'); % Read in f
 
 if FIBSEMData.EightBit==1
   fseek(fid,1024,'bof'); Raw = (fread(fid,[FIBSEMData.ChanNum,FIBSEMData.XResolution*FIBSEMData.YResolution],'*uint8'))'; % Read in raw AI the "*" is needed to read long set of data
+  missing = uint8(zeros(FIBSEMData.XResolution*FIBSEMData.YResolution-size(Raw,1),2)); % creates missing element array
+  Raw = vertcat(Raw, missing); % concatenate zeros to the correct size of raw data
 else
   fseek(fid,1024,'bof'); Raw = (fread(fid,[FIBSEMData.ChanNum,FIBSEMData.XResolution*FIBSEMData.YResolution],'*int16'))'; % Read in raw AI the "*" is needed to read long set of data
+  missing = int16(zeros(FIBSEMData.XResolution*FIBSEMData.YResolution-size(Raw,1),2)); % creates missing element array
+  Raw = vertcat(Raw, missing); % concatenate zeros to the correct size of raw data
 end
 fclose(fid); % Close the file
 
