@@ -35,10 +35,12 @@ def parse_tile_num(path):
 
 
 @click.command()
-@click.argument("src", type=click.Path(exists=True, file_okay=False,
-                                       readable=True, allow_dash=False))
-@click.argument("dst", type=click.Path(exists=False, file_okay=False,
-                                       writable=True, allow_dash=False))
+@click.argument(
+    "src", type=click.Path(exists=True, file_okay=False, readable=True, allow_dash=False)
+)
+@click.argument(
+    "dst", type=click.Path(exists=False, file_okay=False, writable=True, allow_dash=False)
+)
 @click.option("--binning", default=4, help="The number of z-slices to bin")
 @click.option("--globpat", default="/*/0/*/0/0.png", help="File glob pattern")
 def cli(src, dst, binning, globpat):
@@ -53,9 +55,8 @@ def cli(src, dst, binning, globpat):
     click.echo("Searching for files in {} ... ".format(os.path.abspath(src) + globpat), nl=False)
     if ".tif" in globpat:
         # sort by name only.
-        parse_tile_num=None
-    file_list = sorted(glob.glob(src + globpat, recursive=True),
-                       key=parse_tile_num)
+        parse_tile_num = None
+    file_list = sorted(glob.glob(src + globpat, recursive=True), key=parse_tile_num)
     click.echo("found {} files".format(len(file_list)))
     # make it an array
     file_array = np.asarray(file_list)
@@ -71,14 +72,12 @@ def cli(src, dst, binning, globpat):
     def binner(files, i):
         """Bin the files and save them."""
         data = np.array([imread(file) for file in files])
-        tif.imsave(basename.format(i), data.mean(0).astype(data.dtype),
-                   compress=6)
+        tif.imsave(basename.format(i), data.mean(0).astype(data.dtype), compress=6)
 
     my_slice = slice(None, file_array.size - file_array.size % binning)
-    to_compute = dask.delayed([
-        binner(files, i)
-        for i, files in enumerate(file_array[my_slice].reshape(-1, binning))
-    ])
+    to_compute = dask.delayed(
+        [binner(files, i) for i, files in enumerate(file_array[my_slice].reshape(-1, binning))]
+    )
     # do the computation.
     to_compute.compute(get=dask.multiprocessing.get)
 
